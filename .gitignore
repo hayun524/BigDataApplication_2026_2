@@ -1,0 +1,6 @@
+.DS_Store
+.vscode/
+.idea/
+*.log
+# 원본 CSV는 용량이 커서 제외 (정제 스크립트와 dbinsert.sql만 올림)
+data/raw/
