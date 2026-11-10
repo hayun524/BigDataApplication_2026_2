@@ -3,7 +3,7 @@
 -- 프로젝트   : 서울 날씨와 따릉이 이용량 분석 웹사이트 (빅데이터응용 기말)
 -- 작성자     : 김수연 (1. DB 설계)
 -- 대상 DBMS  : MariaDB 10.4+ (XAMPP 기본) / 문자셋 utf8mb4
--- 버전       : v2 (11/10) raw data 구조에 맞춰 weather·rental_daily 수정
+-- 버전       : v2 (11/11) raw data 확인 결과 반영 (weather 눈·강수 컬럼, rental_daily INT)
 --              (변경 내용은 docs/db-design.md 「변경 이력」 참고)
 --
 -- 실행 방법
@@ -16,9 +16,11 @@
 --   → user_account → fault_report
 -- =====================================================================
 
--- 평가 서버에서 CREATE DATABASE 권한이 있을 때만 아래 2줄 주석 해제
--- CREATE DATABASE IF NOT EXISTS team06 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
--- USE team06;
+-- DB가 없으면 만들고, 있으면 그대로 사용 (IF NOT EXISTS)
+--   테스트: team06.* 권한 계정(DB 있음/없음) · root 모두 성공
+--   주석 처리하면 DB를 선택하지 않고 실행할 때 1046 No database selected
+CREATE DATABASE IF NOT EXISTS team06 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE team06;
 
 SET NAMES utf8mb4;
 
@@ -51,11 +53,10 @@ CREATE TABLE district (
 
 -- ---------------------------------------------------------------------
 -- 2. station : 따릉이 대여소 (45개)
---   - station_id   : 대여소번호 (예: 102). 대여소 정보·대여가능 수량 파일의 키
---   - station_code : 대여소ID (예: ST-1002). 대여·반납 승객수(5분 단위) 파일의 키
---                    → 샘플 45개는 반드시 입력 (NULL 허용은 station_form 신규 등록용)
+--   - station_id   : 대여소번호 (예: 102). 이용정보(일별)·대여소 정보 파일과 조인되는 키
+--   - station_code : 대여소ID (예: ST-1002), 선택. 5분 단위 승객수 파일을 쓸 때만 필요
 --                    ⚠️ ST 뒤 숫자 ≠ 대여소번호 (ST-1002 = 양천구, 1002번 = 강동구)
---                       → 대여소 마스터 정보 좌표로 매칭해서 넣기
+--                       → 쓰게 되면 대여소 마스터 정보 좌표로 매칭해서 넣기
 --   - hangang_park : 한강공원 안 대여소면 공원 이름, 아니면 NULL
 --                    (IS NOT NULL → 한강공원 여부, 값 → 공원별 비교)
 --   - status       : report.php 트랜잭션에서 '점검중'으로 UPDATE
@@ -113,18 +114,19 @@ CREATE TABLE calendar (
   COMMENT = '날짜 차원 (연·월·계절·요일·공휴일)';
 
 -- ---------------------------------------------------------------------
--- 4. weather : 일별 날씨 (기상청 ASOS 서울 108 지점 '시간자료'를 하루 단위로 집계)
---   - avg/min/max_temp : 시간별 기온 24개의 평균 / 최저 / 최고
---   - precipitation    : 시간별 강수량 합 (원본 빈칸 = 강수 없음 → 0)
---   - rain_hours       : 강수량이 기록된 시간 수 (0.0 = 0.1mm 미만 흔적 강수도 포함)
---   - commute_rain     : 출퇴근 시간(7~9시, 17~19시)에 강수 기록이 있으면 1
---   - new_snow_cm      : '3시간신적설' 합 = 그날 새로 내린 눈 (빈칸 = 0)
---   - snow_depth_cm    : '적설' 최대 = 땅에 쌓여 있는 눈 (누적값이라 SUM 금지, MAX)
---   - weather_type     : 생성 컬럼
---                        새로 내린 눈 > 0, 또는 강수 1mm 이상 & 평균기온 1℃ 이하 → 눈
---                        강수 1mm 이상 → 비 / 평균 전운량 6 이상 → 흐림 / 그 외 → 맑음
---                        (서울 눈은 0~1℃에서 많이 와서 기온만으로는 1/6·1/17이 '비'로 잘못 분류됨)
---   - temp_band        : 생성 컬럼, 평균기온 구간 (영하 / 0~10 / 10~20 / 20~28 / 28+)
+-- 4. weather : 일별 날씨 (기상청 ASOS 서울 108 지점 일자료)
+--   ASOS 일자료 컬럼 → weather 컬럼
+--   - 평균/최저/최고기온        → avg_temp / min_temp / max_temp
+--   - 일강수량(mm)             → precipitation   (빈칸 = 강수 없음 → 0)
+--   - 강수 계속시간(hr)         → rain_hours      (빈칸 = 0)
+--   - 평균 상대습도 / 평균 풍속 / 평균 전운량 → avg_humidity / avg_wind / avg_cloud
+--   - 합계 3시간 신적설(cm)     → new_snow_cm     그날 새로 내린 눈 (빈칸 = 0)
+--   - 일 최심적설(cm)           → snow_depth_cm   땅에 쌓여 있는 눈 (빈칸 = 0)
+--   - weather_type : 생성 컬럼
+--       새로 내린 눈 > 0, 또는 강수 1mm 이상 & 평균기온 1℃ 이하 → 눈
+--       강수 1mm 이상 → 비 / 평균 전운량 6 이상 → 흐림 / 그 외 → 맑음
+--       (서울 눈은 0~1℃에서 많이 와서 기존 '0℃ 이하' 기준은 1/6·1/17·11/28을 '비'로 분류)
+--   - temp_band    : 생성 컬럼, 평균기온 구간 (영하 / 0~10 / 10~20 / 20~28 / 28+)
 -- ---------------------------------------------------------------------
 CREATE TABLE weather (
   weather_date   DATE              NOT NULL,
@@ -132,8 +134,7 @@ CREATE TABLE weather (
   min_temp       DECIMAL(4,1)      NULL,
   max_temp       DECIMAL(4,1)      NULL,
   precipitation  DECIMAL(5,1)      NOT NULL DEFAULT 0,
-  rain_hours     TINYINT UNSIGNED  NOT NULL DEFAULT 0,
-  commute_rain   TINYINT(1)        NOT NULL DEFAULT 0,
+  rain_hours     DECIMAL(3,1)      NOT NULL DEFAULT 0,
   avg_humidity   DECIMAL(4,1)      NULL,
   avg_wind       DECIMAL(4,1)      NULL,
   avg_cloud      DECIMAL(3,1)      NULL,
@@ -157,10 +158,9 @@ CREATE TABLE weather (
   CONSTRAINT fk_weather_calendar FOREIGN KEY (weather_date)
     REFERENCES calendar (cal_date)
     ON UPDATE CASCADE ON DELETE RESTRICT,
-  -- CHECK : 전처리 실수 방지 (비 25시간 이상, 출퇴근 비에 0·1 외 값, 음수 눈 → INSERT 거부)
+  -- CHECK : 전처리 실수 방지 (음수 강수·눈, 하루 24시간 넘는 강수 시간 → INSERT 거부)
   CONSTRAINT ck_precip CHECK (precipitation >= 0),
-  CONSTRAINT ck_rain_hours CHECK (rain_hours <= 24),
-  CONSTRAINT ck_commute_rain CHECK (commute_rain IN (0, 1)),
+  CONSTRAINT ck_rain_hours CHECK (rain_hours BETWEEN 0 AND 24),
   CONSTRAINT ck_humidity CHECK (avg_humidity IS NULL OR avg_humidity BETWEEN 0 AND 100),
   CONSTRAINT ck_cloud CHECK (avg_cloud IS NULL OR avg_cloud BETWEEN 0 AND 10),
   CONSTRAINT ck_snow CHECK (new_snow_cm >= 0 AND snow_depth_cm >= 0),
@@ -168,31 +168,29 @@ CREATE TABLE weather (
   INDEX idx_weather_temp (avg_temp),
   INDEX idx_weather_band (temp_band)   -- aggregate·rollup에서 GROUP BY temp_band 용
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci
-  COMMENT = '일별 날씨 (ASOS 서울 시간자료 집계)';
+  COMMENT = '일별 날씨 (ASOS 서울 일자료)';
 
 -- ---------------------------------------------------------------------
--- 5. rental_daily : 대여소별 일별 이용 (약 45 × 366 = 16,470건)
---   원본 '대여소별 대여/반납 승객수(5분 단위)'는 이용 1건이
---   집계_기준 '출발시간' / '도착시간'으로 2번 들어 있음 → 그냥 더하면 2배
---   - rent_count       : '출발시간' 행, 시작_대여소 기준 전체_건수 합 (빌린 건수)
---   - return_count     : '도착시간' 행, 종료_대여소 기준 전체_건수 합 (반납된 건수, 종료 ID 'X' 제외)
---   - total_minutes    : 출발 기준 전체_이용_분 합
---   - total_distance_m : 출발 기준 전체_이용_거리(m) 합 (원본이 정수 m)
+-- 5. rental_daily : 대여소별 일별 이용 (45 × 366 = 16,470건)
+--   원본 '서울시 공공자전거 이용정보(일별)'은 대여구분·성별·연령대별로
+--   행이 나뉘어 있으므로 (대여일자, 대여소번호)로 SUM 해서 넣는다.
+--   - rent_count       : 이용건수 합
+--   - total_minutes    : 이용시간(분) 합
+--   - total_distance_m : 이동거리(m) 합
 --   - 이용 0건인 날도 0으로 채운 행을 넣기 (이동평균·LAG가 날짜를 건너뛰지 않게)
---   - UNSIGNED 대신 INT + CHECK(>=0) : return_count - rent_count (순유입)가 음수일 때
---     UNSIGNED면 1690 out of range 에러가 나서 signed로 둠
+--   - UNSIGNED 대신 INT + CHECK(>=0) : 전일 대비 증감 (rent_count - LAG(rent_count))이
+--     음수일 때 UNSIGNED면 1690 out of range 에러가 나서 signed로 둠
 --   - FK → station 은 RESTRICT : 이용 기록 있는 대여소는 삭제 불가
 -- ---------------------------------------------------------------------
 CREATE TABLE rental_daily (
   station_id        INT            NOT NULL,
   rent_date         DATE           NOT NULL,
   rent_count        INT            NOT NULL DEFAULT 0,
-  return_count      INT            NOT NULL DEFAULT 0,
   total_minutes     INT            NOT NULL DEFAULT 0,
   total_distance_m  INT            NOT NULL DEFAULT 0,
   CONSTRAINT pk_rental_daily PRIMARY KEY (station_id, rent_date),
-  CONSTRAINT ck_rental_nonneg CHECK (rent_count >= 0 AND return_count >= 0
-                                     AND total_minutes >= 0 AND total_distance_m >= 0),
+  CONSTRAINT ck_rental_nonneg CHECK (rent_count >= 0 AND total_minutes >= 0
+                                     AND total_distance_m >= 0),
   CONSTRAINT fk_rental_station FOREIGN KEY (station_id)
     REFERENCES station (station_id)
     ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -201,7 +199,7 @@ CREATE TABLE rental_daily (
     ON UPDATE CASCADE ON DELETE RESTRICT,
   INDEX idx_rental_date (rent_date)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci
-  COMMENT = '대여소별 일별 대여·반납';
+  COMMENT = '대여소별 일별 이용량';
 
 -- ---------------------------------------------------------------------
 -- 6. user_account : 로그인 계정 (login.php, 세션)
