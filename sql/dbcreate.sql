@@ -25,7 +25,7 @@ SET NAMES utf8mb4;
 --   - district_id : 행정표준 시군구 코드 5자리 (예: 중구 11140)
 --   - life_zone   : 서울시 5대 권역생활권 (2030 서울생활권계획)
 --   - daytime_index : 주간인구지수 = 주간인구 / 상주인구 × 100
---                     (2020 인구주택총조사, 통계청)
+--                     (2020 인구주택총조사, 통계청) → 소수점 첫째 자리에서 반올림한 정수
 --   - district_type : 지수로 자동 계산되는 생성 컬럼
 --                     109 초과 업무형 / 100~109 혼합형 / 100 미만 주거형
 --                     (서울 전체 지수 108.8 → 반올림 109를 기준선으로 사용)
@@ -34,7 +34,7 @@ CREATE TABLE district (
   district_id    INT           NOT NULL,
   district_name  VARCHAR(10)   NOT NULL,
   life_zone      ENUM('도심권','동북권','서북권','서남권','동남권') NOT NULL,
-  daytime_index  DECIMAL(5,1)  NOT NULL,
+  daytime_index  SMALLINT UNSIGNED NOT NULL,
   district_type  VARCHAR(5) AS (
                    CASE WHEN daytime_index > 109 THEN '업무형'
                         WHEN daytime_index >= 100 THEN '혼합형'
