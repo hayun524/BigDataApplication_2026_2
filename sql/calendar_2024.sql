@@ -1,5 +1,5 @@
 -- calendar_2024.sql : 2024-01-01 ~ 2024-12-31 (366일)
--- 작성자 : 김수연 / tools/gen_calendar.py 로 생성
+-- 작성자 : 김수연 / data/gen_calendar.py 로 생성
 -- day_type 은 생성 컬럼이라 INSERT 하지 않음
 SET NAMES utf8mb4;
 INSERT INTO calendar (cal_date, year, month, day, day_of_week, day_name, season, is_holiday, holiday_name) VALUES
