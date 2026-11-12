@@ -32,6 +32,7 @@ HOLIDAYS_2024 = {
 DAY_NAMES = "일월화수목금토"  # DAYOFWEEK 1=일 ... 7=토
 
 
+# 작성자: 김수연 — 월 → 계절 (3~5 봄, 6~8 여름, 9~11 가을, 12~2 겨울)
 def season_of(month: int) -> str:
     if month in (3, 4, 5):
         return "봄"
@@ -42,9 +43,10 @@ def season_of(month: int) -> str:
     return "겨울"
 
 
+# 작성자: 김수연 — 2024년 366일 calendar INSERT문 출력
 def main() -> None:
     print("-- calendar_2024.sql : 2024-01-01 ~ 2024-12-31 (366일)")
-    print("-- 작성자 : 김수연 / tools/gen_calendar.py 로 생성")
+    print("-- 작성자 : 김수연 / data/gen_calendar.py 로 생성")
     print("-- day_type 은 생성 컬럼이라 INSERT 하지 않음")
     print("SET NAMES utf8mb4;")
     print("INSERT INTO calendar (cal_date, year, month, day, day_of_week, day_name, season, is_holiday, holiday_name) VALUES")
