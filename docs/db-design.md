@@ -128,3 +128,7 @@ team06/
 | v2 | 11/11 | station: station_code(ST-ID) 설명 수정 (구조 동일) | 5분 단위 파일 사용 시 ST-ID ≠ 대여소번호 |
 | v2 | 11/11 | dbcreate.sql 맨 위 CREATE DATABASE·USE 주석 해제 | IF NOT EXISTS라 DB 유무·권한 경우 모두 설치 성공 (DB 미선택 시 1046 방지) |
 | 대기 | ~11/11 | fault_report 처리 방식 (3번), 시간대 분석 여부 (4·5번) | 팀 답변 후 반영 |
+
+## ERD (v2 확정, 11/12)
+
+![ERD](erd.png)
