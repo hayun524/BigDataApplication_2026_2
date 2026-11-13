@@ -3,6 +3,7 @@
 -- 작성자: 정서진 (2. 데이터)  /  district·calendar 부분 작성자: 김수연
 -- 실행 순서: dbcreate.sql → dbinsert.sql
 -- 넣는 순서: district → calendar → station → weather → rental_daily → user_account
+-- 생성: python data/make_dbinsert.py
 -- =====================================================================
 SET NAMES utf8mb4;
 USE team06;
@@ -34,7 +35,7 @@ INSERT INTO district (district_id, district_name, life_zone, daytime_index) VALU
   (11740, '강동구', '동남권',  86);
 
 -- calendar_2024.sql : 2024-01-01 ~ 2024-12-31 (366일)
--- 작성자 : 김수연 / tools/gen_calendar.py 로 생성
+-- 작성자 : 김수연 / data/gen_calendar.py 로 생성
 -- day_type 은 생성 컬럼이라 INSERT 하지 않음
 INSERT INTO calendar (cal_date, year, month, day, day_of_week, day_name, season, is_holiday, holiday_name) VALUES
   ('2024-01-01', 2024, 1, 1, 2, '월', '겨울', 1, '신정'),
@@ -404,7 +405,6 @@ INSERT INTO calendar (cal_date, year, month, day, day_of_week, day_name, season,
   ('2024-12-30', 2024, 12, 30, 2, '월', '겨울', 0, NULL),
   ('2024-12-31', 2024, 12, 31, 3, '화', '겨울', 0, NULL);
 
-
 -- station : 따릉이 대여소 45개 (9개 구 x 상위2·중간1·하위2, 2024 연간 대여건수 기준)
 -- 작성자: 정서진 (2. 데이터)
 -- station_code(ST-ID): 따릉이대여소 마스터 정보 좌표로 가장 가까운 대여소 매칭
@@ -455,7 +455,6 @@ INSERT INTO station (station_id, station_code, station_name, district_id, addres
   (1073, 'ST-1834', 'SSTS 몰 앞', 11740, '양재대로 1517', 37.5411453, 127.1410523, 7, '2020-01-10', NULL, '정상'),
   (1039, 'ST-1056', '고덕초등학교', 11740, '서울특별시 고덕동 215', 37.5612984, 127.1678467, 7, '2017-11-01', NULL, '정상'),
   (3539, 'ST-1686', '서원마을', 11740, '암사동 117-3', 37.5637932, 127.1328354, 10, '2018-11-14', NULL, '정상');
-
 
 -- weather : 2024 일별 날씨 (기상청 ASOS 서울 108 일자료)
 -- 작성자: 정서진 (2. 데이터)
@@ -827,7 +826,6 @@ INSERT INTO weather (weather_date, avg_temp, min_temp, max_temp, precipitation, 
   ('2024-12-29', 1.1, -4.2, 6.1, 0.0, 0.0, 56.1, 1.5, 5.1, 0.0, 0.0),
   ('2024-12-30', 5.5, 1.9, 10.1, 0.0, 0.2, 68.5, 2.3, 7.4, 0.0, 0.0),
   ('2024-12-31', 0.6, -2.0, 4.9, 0.0, 0.3, 45.8, 2.6, 0.0, 0.0, 0.0);
-
 
 -- rental_daily : 대여소 45개 x 366일 이용량 (이용 0건인 날도 0으로 채움)
 -- 작성자: 정서진 (2. 데이터)
