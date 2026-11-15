@@ -34,6 +34,7 @@ a { color: var(--green-dark); }
 .user { font-size: 14px; }
 .badge { background: var(--green); color: #fff; border-radius: 4px; padding: 1px 6px; font-size: 12px; }
 .logout { margin-left: 10px; color: var(--muted); }
+.login-at { margin-left: 8px; color: var(--muted); font-size: 12px; }
 .menu {
   display: flex; flex-wrap: wrap; gap: 4px;
   max-width: 1200px; margin: 0 auto; padding: 0 20px 8px;
@@ -130,6 +131,22 @@ h3 { margin: 0 0 12px; font-size: 16px; }
 .month-label { margin-top: 6px; font-weight: 600; }
 .month-temp { color: var(--muted); }
 
+/* 메인 대시보드 담당 표시 */
+.owner-tag { font-size: 12px; font-weight: 400; color: var(--muted); background: #eef2ef;
+  border-radius: 999px; padding: 3px 10px; margin-left: 8px; vertical-align: middle; }
+
+/* 내 세션 */
+.session-panel h3 small { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 6px; }
+.session-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.session-info { display: grid; grid-template-columns: 90px 1fr; gap: 6px 10px; margin: 0; font-size: 14px; }
+.session-info dt { color: var(--muted); }
+.session-info dd { margin: 0; }
+.recent { font-size: 14px; }
+.recent ol { margin: 6px 0 0; padding-left: 20px; }
+.recent li { margin: 3px 0; }
+.recent small, .empty-note { color: var(--muted); }
+.empty-note { margin: 6px 0 0; }
+
 /* 데이터 현황 */
 .data-status { margin-top: 20px; }
 .data-status summary { cursor: pointer; color: var(--muted); margin-bottom: 8px; }
@@ -158,5 +175,6 @@ h3 { margin: 0 0 12px; font-size: 16px; }
   .bar-row { grid-template-columns: 64px 1fr; }
   .bar-value { grid-column: 2; }
   .month-chart { gap: 2px; }
+  .session-grid { grid-template-columns: 1fr; }
   .month-value, .month-temp { font-size: 10px; }
 }

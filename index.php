@@ -119,7 +119,7 @@ $count_total = array_sum($counts);
 $fmt = function ($n, $dec = 0) { return number_format((float)$n, $dec); };
 ?>
 <main class="container">
-  <h2>날씨와 따릉이 이용량</h2>
+  <h2>날씨와 따릉이 이용량 <span class="owner-tag">메인 대시보드 · 왕은서</span></h2>
   <p class="lead">
     <?= idx_h($summary['first_date']) ?> ~ <?= idx_h($summary['last_date']) ?> 서울 ASOS 일별 날씨와
     9개 자치구 <?= (int)$summary['stations'] ?>개 대여소의 일별 따릉이 이용 기록을 분석합니다.
@@ -183,6 +183,31 @@ $fmt = function ($n, $dec = 0) { return number_format((float)$n, $dec); };
           <span class="month-temp"><?= $fmt($m['avg_temp'], 1) ?>℃</span>
         </div>
       <?php endforeach; ?>
+    </div>
+  </section>
+
+  <!-- 내 세션 정보 + 최근 본 페이지 (PHP 세션, 지침 2-(6)) — 작성자: 왕은서 -->
+  <section class="panel session-panel">
+    <h3>내 세션 <small>PHP 세션에 저장된 정보</small></h3>
+    <div class="session-grid">
+      <dl class="session-info">
+        <dt>사용자</dt><dd><?= idx_h($_SESSION['user_name'] ?? '') ?> (<?= idx_h($_SESSION['login_id'] ?? '') ?>)</dd>
+        <dt>권한</dt><dd><?= ($_SESSION['role'] ?? '') === 'admin' ? '관리자 · 데이터 수정 가능' : '일반 사용자 · 조회만 가능' ?></dd>
+        <dt>로그인 시각</dt><dd><?= idx_h($_SESSION['login_at'] ?? '-') ?></dd>
+      </dl>
+      <div class="recent">
+        <strong>최근 본 페이지</strong>
+        <?php if (empty($_SESSION['recent_pages'])): ?>
+          <p class="empty-note">아직 없어요. 메뉴에서 페이지를 열면 여기에 기록돼요.</p>
+        <?php else: ?>
+          <ol>
+            <?php foreach ($_SESSION['recent_pages'] as $r):
+                if (!isset($MENU[$r['page']])) continue; ?>
+              <li><a href="<?= idx_h($r['page']) ?>"><?= idx_h($MENU[$r['page']][0]) ?></a> <small><?= idx_h($r['at']) ?></small></li>
+            <?php endforeach; ?>
+          </ol>
+        <?php endif; ?>
+      </div>
     </div>
   </section>
 

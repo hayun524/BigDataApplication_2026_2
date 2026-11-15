@@ -41,9 +41,26 @@ $MENU = [
     'window.php'         => ['추세',      '노경윤'],
 ];
 
+// ---------------------------------------------------------------------
+// 작성자: 왕은서 — 최근 본 페이지 기록 (PHP 세션, 지침 2-(6))
+//   메뉴에 있는 페이지를 열 때마다 세션에 [페이지, 시각]을 저장한다.
+//   같은 페이지는 맨 앞으로 옮기고 최대 5개까지만 남긴다. 홈(index.php)은 제외
+// ---------------------------------------------------------------------
+if (isset($MENU[$current_page]) && $current_page !== 'index.php') {
+    $recent = [];
+    foreach ($_SESSION['recent_pages'] ?? [] as $r) {
+        if ($r['page'] !== $current_page) {
+            $recent[] = $r;
+        }
+    }
+    array_unshift($recent, ['page' => $current_page, 'at' => date('H:i')]);
+    $_SESSION['recent_pages'] = array_slice($recent, 0, 5);
+}
+
 $page_title = $page_title ?? ($MENU[$current_page][0] ?? '따릉이 × 날씨');
 $user_name  = htmlspecialchars($_SESSION['user_name'] ?? '', ENT_QUOTES, 'UTF-8');
 $is_admin   = ($_SESSION['role'] ?? '') === 'admin';
+$login_time = isset($_SESSION['login_at']) ? substr($_SESSION['login_at'], 11, 5) : '';
 ?>
 <!DOCTYPE html>
 <html lang="ko">
@@ -59,6 +76,7 @@ $is_admin   = ($_SESSION['role'] ?? '') === 'admin';
     <a class="brand" href="index.php">따릉이 × 날씨 <small>team06 식스센스</small></a>
     <div class="user">
       <?= $user_name ?>님<?= $is_admin ? ' <span class="badge">관리자</span>' : '' ?>
+      <?php if ($login_time !== ''): ?><span class="login-at">로그인 <?= $login_time ?></span><?php endif; ?>
       <a class="logout" href="logout.php">로그아웃</a>
     </div>
   </div>

@@ -41,6 +41,8 @@ try {
 // 작성자: 왕은서 — PHP 세션 시작 (지침 2-(6))
 //   세션 키 : user_id, login_id, user_name, role, login_at
 // ---------------------------------------------------------------------
+date_default_timezone_set('Asia/Seoul');   // 작성자: 왕은서 — 세션에 저장하는 시각을 한국 시간으로
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
