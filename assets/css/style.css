@@ -34,6 +34,7 @@ a { color: var(--green-dark); }
 .user { font-size: 14px; }
 .badge { background: var(--green); color: #fff; border-radius: 4px; padding: 1px 6px; font-size: 12px; }
 .logout { margin-left: 10px; color: var(--muted); }
+.login-at { margin-left: 8px; color: var(--muted); font-size: 12px; }
 .menu {
   display: flex; flex-wrap: wrap; gap: 4px;
   max-width: 1200px; margin: 0 auto; padding: 0 20px 8px;
@@ -97,6 +98,59 @@ table.result tr:hover td { background: #fafafa; }
 .card span { color: var(--muted); font-size: 13px; }
 a.card:hover { border-color: var(--green); }
 .card.todo { opacity: .55; }
+h3 { margin: 0 0 12px; font-size: 16px; }
+.container > h3 { margin-top: 28px; }
+.lead { color: var(--muted); margin: -8px 0 20px; }
+
+/* 요약 숫자 */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.kpi { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+.kpi span { display: block; color: var(--muted); font-size: 13px; }
+.kpi strong { font-size: 26px; color: var(--green-dark); font-variant-numeric: tabular-nums; }
+.kpi small { color: var(--muted); margin-left: 4px; }
+
+/* 패널 */
+.panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; }
+.panel { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.panel table.result { border: 0; }
+
+/* 날씨별 가로 막대 */
+.bar-row { display: grid; grid-template-columns: 80px 1fr 170px; align-items: center; gap: 10px; margin: 10px 0; }
+.bar-label small { color: var(--muted); }
+.bar-track { background: #eef2ef; border-radius: 4px; height: 14px; overflow: hidden; }
+.w-bar { display: block; height: 100%; background: var(--green); border-radius: 4px; }
+.bar-value { font-variant-numeric: tabular-nums; font-size: 14px; }
+.bar-value .down { color: var(--warn); }
+.bar-value .up { color: var(--green-dark); }
+
+/* 월별 세로 막대 */
+.month-chart { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; align-items: end; height: 220px; }
+.month-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; font-size: 12px; }
+.month-bar { width: 70%; background: var(--green); border-radius: 4px 4px 0 0; min-height: 2px; }
+.month-value { color: var(--muted); margin-bottom: 4px; }
+.month-label { margin-top: 6px; font-weight: 600; }
+.month-temp { color: var(--muted); }
+
+/* 메인 대시보드 담당 표시 */
+.owner-tag { font-size: 12px; font-weight: 400; color: var(--muted); background: #eef2ef;
+  border-radius: 999px; padding: 3px 10px; margin-left: 8px; vertical-align: middle; }
+
+/* 내 세션 */
+.session-panel h3 small { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 6px; }
+.session-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.session-info { display: grid; grid-template-columns: 90px 1fr; gap: 6px 10px; margin: 0; font-size: 14px; }
+.session-info dt { color: var(--muted); }
+.session-info dd { margin: 0; }
+.recent { font-size: 14px; }
+.recent ol { margin: 6px 0 0; padding-left: 20px; }
+.recent li { margin: 3px 0; }
+.recent small, .empty-note { color: var(--muted); }
+.empty-note { margin: 6px 0 0; }
+
+/* 데이터 현황 */
+.data-status { margin-top: 20px; }
+.data-status summary { cursor: pointer; color: var(--muted); margin-bottom: 8px; }
+.data-status table.result { max-width: 360px; }
 
 /* ---------- 로그인 (login.php) ---------- */
 .login-page { display: flex; min-height: 100vh; align-items: center; justify-content: center; }
@@ -117,4 +171,10 @@ a.card:hover { border-color: var(--green); }
 @media (max-width: 640px) {
   .site-header .bar { flex-direction: column; align-items: flex-start; gap: 6px; }
   table.result { display: block; overflow-x: auto; }
+  .panels { grid-template-columns: 1fr; }
+  .bar-row { grid-template-columns: 64px 1fr; }
+  .bar-value { grid-column: 2; }
+  .month-chart { gap: 2px; }
+  .session-grid { grid-template-columns: 1fr; }
+  .month-value, .month-temp { font-size: 10px; }
 }
