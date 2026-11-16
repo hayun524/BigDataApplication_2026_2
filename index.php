@@ -119,7 +119,7 @@ $count_total = array_sum($counts);
 $fmt = function ($n, $dec = 0) { return number_format((float)$n, $dec); };
 ?>
 <main class="container">
-  <h2>날씨와 따릉이 이용량 <span class="owner-tag">메인 대시보드 · 왕은서</span></h2>
+  <h2>날씨와 따릉이 이용량</h2>
   <p class="lead">
     <?= idx_h($summary['first_date']) ?> ~ <?= idx_h($summary['last_date']) ?> 서울 ASOS 일별 날씨와
     9개 자치구 <?= (int)$summary['stations'] ?>개 대여소의 일별 따릉이 이용 기록을 분석합니다.
@@ -214,11 +214,11 @@ $fmt = function ($n, $dec = 0) { return number_format((float)$n, $dec); };
   <!-- 메뉴 -->
   <h3>메뉴</h3>
   <div class="cards">
-    <?php foreach ($MENU as $file => [$label, $owner]): if ($file === 'index.php') continue; ?>
+    <?php foreach ($MENU as $file => [$label, $desc]): if ($file === 'index.php') continue; ?>
       <?php if (file_exists(__DIR__ . '/' . $file)): ?>
-        <a class="card" href="<?= $file ?>"><strong><?= $label ?></strong><span><?= $owner ?></span></a>
+        <a class="card" href="<?= $file ?>"><strong><?= $label ?></strong><span><?= $desc ?></span></a>
       <?php else: ?>
-        <div class="card todo"><strong><?= $label ?></strong><span>준비 중 · <?= $owner ?></span></div>
+        <div class="card todo"><strong><?= $label ?></strong><span>준비 중 · <?= $desc ?></span></div>
       <?php endif; ?>
     <?php endforeach; ?>
   </div>
