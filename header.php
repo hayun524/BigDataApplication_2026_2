@@ -26,19 +26,20 @@ if (empty($_SESSION['user_id'])) {
 }
 
 // ---------------------------------------------------------------------
-// 작성자: 왕은서 — 메뉴 목록 (파일명 => [메뉴 이름, 담당])
+// 작성자: 왕은서 — 메뉴 목록 (파일명 => [메뉴 이름, 짧은 설명])
 //   아직 없는 파일은 회색으로 표시만 하고 링크는 걸지 않는다.
+//   담당자 이름은 화면에 표시하지 않는다 (팀 합의: 보고서·PPT에만 표기, 코드에는 작성자 주석)
 // ---------------------------------------------------------------------
 $MENU = [
-    'index.php'          => ['홈',        '왕은서'],
-    'station_list.php'   => ['대여소',    '김수연'],
-    'weather_manage.php' => ['날씨',      '정서진'],
-    'station_form.php'   => ['대여소 관리', '정하윤'],
-    'report.php'         => ['고장신고',  '정하윤'],
-    'aggregate.php'      => ['집계',      '유지민'],
-    'rollup.php'         => ['롤업',      '유지민'],
-    'ranking.php'        => ['랭킹',      '노경윤'],
-    'window.php'         => ['추세',      '노경윤'],
+    'index.php'          => ['홈',          '요약 통계'],
+    'station_list.php'   => ['대여소',      '대여소 검색'],
+    'weather_manage.php' => ['날씨',        '날씨 조회·수정'],
+    'station_form.php'   => ['대여소 관리', '대여소 등록·수정·삭제'],
+    'report.php'         => ['고장신고',    '고장 신고 접수·처리'],
+    'aggregate.php'      => ['집계',        '조건별 다중 그룹 집계'],
+    'rollup.php'         => ['롤업',        '롤업·드릴다운'],
+    'ranking.php'        => ['랭킹',        '대여소 순위'],
+    'window.php'         => ['추세',        '이동평균·추세'],
 ];
 
 // ---------------------------------------------------------------------
@@ -81,11 +82,11 @@ $login_time = isset($_SESSION['login_at']) ? substr($_SESSION['login_at'], 11, 5
     </div>
   </div>
   <nav class="menu">
-    <?php foreach ($MENU as $file => [$label, $owner]): ?>
+    <?php foreach ($MENU as $file => [$label, $desc]): ?>
       <?php if (file_exists(__DIR__ . '/' . $file)): ?>
         <a href="<?= $file ?>" class="<?= $file === $current_page ? 'active' : '' ?>"><?= $label ?></a>
       <?php else: ?>
-        <span class="todo" title="준비 중 (<?= $owner ?>)"><?= $label ?></span>
+        <span class="todo" title="준비 중"><?= $label ?></span>
       <?php endif; ?>
     <?php endforeach; ?>
   </nav>
