@@ -427,8 +427,8 @@ function agg_sort_url($target_sort) {
         <label>종료일
           <input type="date" name="date_to" value="<?= agg_h($date_to) ?>" min="<?= agg_h($data_min_date) ?>" max="<?= agg_h($data_max_date) ?>" required>
         </label>
-        <button type="submit" name="search" value="1">집계</button>
         <button type="button" onclick="location.href='aggregate.php'">초기화</button>
+        <button type="submit" name="search" value="1">집계</button>
     </div>
   </form>
 
