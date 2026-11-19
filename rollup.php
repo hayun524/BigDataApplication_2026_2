@@ -427,12 +427,9 @@ if ($filter_district_id > 0) {
 ?>
 
 <style>
-.rollup-page { padding-bottom: 12px; }
 .rollup-page .rollup-title { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
-.rollup-page .rollup-title h2 { margin:0 0 7px; font-size:28px; }
 .rollup-page .rollup-title p { margin:0; color:var(--muted); }
 .rollup-page .rollup-kicker { color:var(--green); font-size:11px; font-weight:700; letter-spacing:.03em; }
-.rollup-page .rollup-panel { background:#fff; border:1px solid var(--line); border-radius:8px; padding:20px; }
 .rollup-page .rollup-mode { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
 .rollup-page .rollup-mode a { padding:10px 16px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--green-dark); text-decoration:none; font-size:14px; }
 .rollup-page .rollup-mode a.active { border-color:var(--green); background:var(--green); color:#fff; font-weight:700; }
@@ -442,11 +439,6 @@ if ($filter_district_id > 0) {
 .rollup-page .rollup-filters select { width:220px; height:40px; background:#fff; color:var(--ink); }
 .rollup-page .rollup-filters button { height:40px; }
 .rollup-page .rollup-filter-note { margin:13px 0 0; color:var(--muted); font-size:12px; }
-.rollup-page .rollup-summary { display:grid; grid-template-columns:repeat(3, 1fr); gap:24px; margin:20px 0; }
-.rollup-page .rollup-metric { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px 20px; }
-.rollup-page .rollup-metric span, .rollup-page .rollup-metric small { display:block; color:var(--muted); }
-.rollup-page .rollup-metric span { font-size:13px; }
-.rollup-page .rollup-metric strong { display:block; margin:6px 0; color:var(--green-dark); font-size:28px; font-variant-numeric:tabular-nums; }
 .rollup-page .rollup-location { display:flex; flex-direction:column; gap:14px; margin-bottom:20px; background:#e8f5ec; border-radius:8px; padding:20px; }
 .rollup-page .rollup-location-main { display:flex; justify-content:space-between; align-items:center; gap:20px; }
 .rollup-page .rollup-location-label { color:var(--muted); font-size:12px; }
@@ -456,7 +448,6 @@ if ($filter_district_id > 0) {
 .rollup-page .rollup-path-actions a.disabled { opacity:.4; pointer-events:none; }
 .rollup-page .rollup-session { color:var(--muted); font-size:12px; }
 .rollup-page .rollup-session strong { color:var(--green-dark); margin-right:10px; }
-.rollup-page .rollup-chart { margin-bottom:20px; }
 .rollup-page .rollup-chart-head, .rollup-page .rollup-result-head { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; }
 .rollup-page .rollup-chart h3, .rollup-page .rollup-result-head h3 { margin:0; font-size:18px; }
 .rollup-page .rollup-chart-head p, .rollup-page .rollup-result-head p { margin:5px 0 0; color:var(--muted); font-size:12px; }
@@ -518,7 +509,6 @@ if ($filter_district_id > 0) {
 .rollup-page .rollup-legend strong { color:var(--green-dark); }
 .rollup-page .rollup-error { margin-bottom:20px; }
 @media (max-width:800px) {
-  .rollup-page .rollup-summary { grid-template-columns:1fr; gap:12px; }
   .rollup-page .rollup-location-main, .rollup-page .rollup-title, .rollup-page .rollup-result-head { align-items:flex-start; flex-direction:column; }
   .rollup-page .rollup-axis, .rollup-page .rollup-bar-row { grid-template-columns:90px 1fr 90px; gap:10px; }
 }
@@ -528,12 +518,10 @@ if ($filter_district_id > 0) {
   <div class="rollup-title">
     <div>
       <h2>롤업·드릴다운</h2>
-      <p>대여 현황을 큰 단위에서 세부 단위까지 살펴보세요.</p>
     </div>
-    <span class="rollup-kicker">ROLLUP ANALYSIS</span>
   </div>
 
-  <section class="rollup-panel">
+  <section class="search-form rollup-panel">
     <div class="rollup-mode">
       <a href="<?= roll_h(roll_query_url($base_query, ['mode' => 'time', 'reset_path' => 1])) ?>"
          class="<?= $mode === 'time' ? 'active' : '' ?>">기간별 집계</a>
@@ -581,18 +569,18 @@ if ($filter_district_id > 0) {
   <?php if ($query_error !== ''): ?>
     <p class="msg error rollup-error"><?= roll_h($query_error) ?></p>
   <?php else: ?>
-    <section class="rollup-summary">
-      <div class="rollup-metric">
+    <section class="kpis rollup-summary">
+      <div class="kpi rollup-metric">
         <span>총 대여 건수</span>
         <strong><?= number_format($grand_total) ?>건</strong>
         <small>현재 조회 조건 전체</small>
       </div>
-      <div class="rollup-metric">
+      <div class="kpi rollup-metric">
         <span>현재 집계 단위</span>
         <strong><?= roll_h($level['unit']) ?></strong>
         <small><?= number_format($detail_count) ?>개 그룹 · 단계별 상세 탐색</small>
       </div>
-      <div class="rollup-metric">
+      <div class="kpi rollup-metric">
         <span>최다 이용 <?= roll_h($level['unit']) ?></span>
         <strong><?= $top_row ? roll_h($top_row['label']) : '-' ?></strong>
         <small>
@@ -616,7 +604,7 @@ if ($filter_district_id > 0) {
       <div class="rollup-session"><strong>자동 저장됨</strong>이 세션에서 마지막으로 본 위치를 유지합니다.</div>
     </section>
 
-    <section class="rollup-panel rollup-chart">
+    <section class="panel rollup-chart">
       <div class="rollup-chart-head">
         <div>
           <h3><?= roll_h(($depth > 0 ? end($path_parts) . '의 ' : '') . $level['graph_title']) ?></h3>

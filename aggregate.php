@@ -364,13 +364,6 @@ function agg_sort_url($target_sort) {
 </style>
 <main class="container aggregate-page">
   <h2>다중 기준 집계</h2>
-  <p class="lead">자치구·날씨·계절·요일 등 원하는 기준을 2개 이상 조합해 따릉이 이용량을 비교하세요.</p>
-  <p class="aggregate-db-info">
-    <strong><?= agg_h(DB_NAME) ?></strong> DB · 원본 <?= number_format((int)$data_summary['row_count']) ?>행 ·
-    대여소 <?= number_format((int)$data_summary['station_count']) ?>개 ·
-    <?= number_format((int)$data_summary['day_count']) ?>일
-    (<?= agg_h($data_min_date) ?> ~ <?= agg_h($data_max_date) ?>)
-  </p>
 
   <?php foreach ($errors as $error): ?>
     <p class="msg error"><?= agg_h($error) ?></p>
