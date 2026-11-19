@@ -141,7 +141,6 @@ if ($mode === 'time') {
     $month = 0;
 }
 
-// 허용 목록: 사용자 입력을 SQL 컬럼명으로 직접 사용하지 않는다.
 $LEVELS = [
     'time' => [
         0 => [
@@ -292,7 +291,6 @@ try {
             }
         }
 
-        // 일별 화면에서는 현재 월의 소계만 보여 주고, 한 단계 위인 계절 소계는 제외한다.
         if ($mode === 'time' && $depth === 2 && $row_type === 'subtotal'
             && $raw['key_0'] !== null && $raw['key_1'] === null) {
             continue;
