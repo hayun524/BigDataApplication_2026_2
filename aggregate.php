@@ -67,6 +67,15 @@ $FUNCTIONS = [
     'min' => ['label' => '최소', 'sql' => 'MIN'],
 ];
 
+$SORTS = [
+    'group_asc'  => ['label' => '묶는 기준 오름차순', 'sql' => null,                  'direction' => 'ASC'],
+    'group_desc' => ['label' => '묶는 기준 내림차순', 'sql' => null,                  'direction' => 'DESC'],
+    'value_desc' => ['label' => '집계값 높은 순',     'sql' => 'aggregate_value DESC', 'direction' => null],
+    'value_asc'  => ['label' => '집계값 낮은 순',     'sql' => 'aggregate_value ASC',  'direction' => null],
+    'days_desc'  => ['label' => '해당 일수 많은 순',  'sql' => 'period_days DESC',     'direction' => null],
+    'days_asc'   => ['label' => '해당 일수 적은 순',  'sql' => 'period_days ASC',      'direction' => null],
+];
+
 $searched = isset($_GET['search']);
 $raw_groups = $searched ? (array)($_GET['group'] ?? []) : [];
 $raw_groups = array_values(array_unique(array_filter(
@@ -91,6 +100,7 @@ foreach ($raw_groups as $key) {
 
 $metric_key = isset($METRICS[$_GET['metric'] ?? '']) ? $_GET['metric'] : 'rent_count';
 $function_key = isset($FUNCTIONS[$_GET['function'] ?? '']) ? $_GET['function'] : 'sum';
+$sort_key = isset($SORTS[$_GET['sort'] ?? '']) ? $_GET['sort'] : 'group_asc';
 $date_from = agg_valid_date($_GET['date_from'] ?? '', $data_min_date, $data_max_date)
     ? $_GET['date_from'] : $data_min_date;
 $date_to = agg_valid_date($_GET['date_to'] ?? '', $data_min_date, $data_max_date)
@@ -116,12 +126,12 @@ $metric_total = 0;
 if ($searched && !$errors) {
     $select_parts = [];
     $group_parts = [];
-    $order_parts = [];
+    $group_order_parts = [];
     foreach ($selected_groups as $index => $key) {
         $alias = 'group_' . $index;
         $select_parts[] = $GROUPS[$key]['expr'] . ' AS ' . $alias;
         $group_parts[] = $GROUPS[$key]['expr'];
-        $order_parts[] = $alias . ' ASC';
+        $group_order_parts[] = $alias;
     }
 
     $joins = " FROM rental_daily r
@@ -145,12 +155,23 @@ if ($searched && !$errors) {
     $offset = ($page - 1) * $page_size;
 
     $aggregate_sql = $FUNCTIONS[$function_key]['sql'] . '(' . $METRICS[$metric_key]['column'] . ')';
+    if ($SORTS[$sort_key]['sql'] !== null) {
+        $order_sql = $SORTS[$sort_key]['sql'] . ', '
+                   . implode(', ', array_map(function ($alias) {
+                       return $alias . ' ASC';
+                   }, $group_order_parts));
+    } else {
+        $direction = $SORTS[$sort_key]['direction'];
+        $order_sql = implode(', ', array_map(function ($alias) use ($direction) {
+            return $alias . ' ' . $direction;
+        }, $group_order_parts));
+    }
     $data_sql = 'SELECT ' . implode(', ', $select_parts)
               . ", COUNT(DISTINCT r.rent_date) AS period_days,
                    {$aggregate_sql} AS aggregate_value"
               . $joins
               . " GROUP BY {$group_sql}
-                  ORDER BY " . implode(', ', $order_parts)
+                  ORDER BY {$order_sql}"
               . ' LIMIT ? OFFSET ?';
     $stmt = $conn->prepare($data_sql);
     $stmt->bind_param('ssii', $date_from, $date_to, $page_size, $offset);
@@ -174,6 +195,7 @@ $selected_labels = array_map(function ($key) use ($GROUPS) {
     return $GROUPS[$key]['label'];
 }, $selected_groups);
 $function_label = $FUNCTIONS[$function_key]['label'];
+$sort_label = $SORTS[$sort_key]['label'];
 $metric_label = $METRICS[$metric_key]['label'];
 $metric_unit = $METRICS[$metric_key]['unit'];
 
@@ -181,6 +203,14 @@ function agg_page_url($target_page) {
     $query = $_GET;
     $query['search'] = '1';
     $query['page'] = $target_page;
+    return 'aggregate.php?' . http_build_query($query);
+}
+
+function agg_sort_url($target_sort) {
+    $query = $_GET;
+    $query['search'] = '1';
+    $query['sort'] = $target_sort;
+    $query['page'] = 1;
     return 'aggregate.php?' . http_build_query($query);
 }
 ?>
@@ -274,6 +304,26 @@ function agg_page_url($target_page) {
 .aggregate-page .aggregate-result { min-width: 760px; }
 .aggregate-page .aggregate-result th,
 .aggregate-page .aggregate-result td { white-space: nowrap; }
+.aggregate-page .aggregate-sortable-th > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+.aggregate-page .aggregate-sort-arrows {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0;
+  line-height: .75;
+}
+.aggregate-page .aggregate-sort-arrows a {
+  color: #a8afb6;
+  font-size: 10px;
+  line-height: 10px;
+  text-decoration: none;
+}
+.aggregate-page .aggregate-sort-arrows a:hover,
+.aggregate-page .aggregate-sort-arrows a.active { color: var(--green-dark); }
 .aggregate-page .aggregate-table-footer {
   display: flex;
   justify-content: space-between;
@@ -395,8 +445,30 @@ function agg_page_url($target_page) {
         <thead>
           <tr>
             <?php foreach ($selected_labels as $label): ?><th><?= agg_h($label) ?></th><?php endforeach; ?>
-            <th class="num">해당 일수</th>
-            <th class="num"><?= agg_h($metric_label) ?> <?= agg_h($function_label) ?></th>
+            <th class="num aggregate-sortable-th">
+              <span>해당 일수
+                <span class="aggregate-sort-arrows" aria-label="해당 일수 정렬">
+                  <a href="<?= agg_h(agg_sort_url('days_asc')) ?>"
+                     class="<?= $sort_key === 'days_asc' ? 'active' : '' ?>"
+                     title="해당 일수 오름차순" aria-label="해당 일수 오름차순">▲</a>
+                  <a href="<?= agg_h(agg_sort_url('days_desc')) ?>"
+                     class="<?= $sort_key === 'days_desc' ? 'active' : '' ?>"
+                     title="해당 일수 내림차순" aria-label="해당 일수 내림차순">▼</a>
+                </span>
+              </span>
+            </th>
+            <th class="num aggregate-sortable-th">
+              <span><?= agg_h($metric_label) ?> <?= agg_h($function_label) ?>
+                <span class="aggregate-sort-arrows" aria-label="집계값 정렬">
+                  <a href="<?= agg_h(agg_sort_url('value_asc')) ?>"
+                     class="<?= $sort_key === 'value_asc' ? 'active' : '' ?>"
+                     title="집계값 오름차순" aria-label="집계값 오름차순">▲</a>
+                  <a href="<?= agg_h(agg_sort_url('value_desc')) ?>"
+                     class="<?= $sort_key === 'value_desc' ? 'active' : '' ?>"
+                     title="집계값 내림차순" aria-label="집계값 내림차순">▼</a>
+                </span>
+              </span>
+            </th>
             <th class="num">전체 구성비</th>
           </tr>
         </thead>
