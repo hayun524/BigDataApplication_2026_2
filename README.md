@@ -25,6 +25,14 @@ assets/          CSS, JS, Chart.js 등 (CDN 대신 파일로 포함)
 | 5 | 분석 B | 왕은서 (11/23 인수, 기존 담당 노경윤) | ranking.php, window.php | `feat/analysis-eunseo` |
 | 6 | 공통·문서 | 왕은서 | config.php, header.php, login.php, logout.php, index.php | `feat/common-eunseo` |
 
+### 발표·통합 분담 (11/23 조정)
+| 역할 | 담당 |
+|---|---|
+| 발표 (스크립트 작성·진행) | 김수연 |
+| 발표 자료(PPT) · 데모 시연 | 정서진 |
+| 분석 B 코드 검토 | 유지민 |
+| 코드 통합 확인 · 논문 통합 | 정하윤 |
+
 ## 시작하기
 
 ### 0. 준비
