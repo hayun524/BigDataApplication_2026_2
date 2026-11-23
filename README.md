@@ -5,7 +5,7 @@
 서울 날씨(기온·강수량 등)가 따릉이 이용량에 주는 영향을 분석하는 웹사이트 (PHP + MariaDB, XAMPP)
 
 ## 폴더 구조
-이 레포 = 제출용 `htdocs/teamXX` 폴더 그대로
+이 레포 = 제출용 `htdocs/team06` 폴더 그대로
 
 ```
 /                PHP 페이지 (config.php, header.php, index.php, station_list.php ...)
@@ -39,12 +39,12 @@ cd /Applications/XAMPP/xamppfiles/htdocs
 # 윈도우
 cd C:\xampp\htdocs
 
-git clone https://github.com/hayun524/BigDataApplication_2026_2.git teamXX
-cd teamXX
+git clone https://github.com/hayun524/BigDataApplication_2026_2.git team06
+cd team06
 git checkout -b feat/역할-이름          # 위 담당표의 내 브랜치 이름
 git push -u origin feat/역할-이름
 ```
-→ XAMPP 켜고 브라우저에서 `localhost/teamXX`로 접속
+→ XAMPP 켜고 브라우저에서 `localhost/team06`로 접속
 
 ### 2. 매일 작업할 때
 ```bash
