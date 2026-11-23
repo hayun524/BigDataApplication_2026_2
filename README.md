@@ -21,7 +21,7 @@ assets/          CSS, JS, Chart.js 등 (CDN 대신 파일로 포함)
 | 1 | DB 설계 | 김수연 | sql/dbcreate.sql, sql/dbdrop.sql, sql/dbdump.sql, docs/ERD, station_list.php | `feat/db-suyeon` |
 | 2 | 데이터 | 정서진 | sql/dbinsert.sql, data/ 변환 스크립트, weather_manage.php | `feat/data-seojin` |
 | 3 | CRUD 웹 | 정하윤 | station_form.php, report.php | `feat/crud-hayun` |
-| 4 | 분석 A | 유지민 | aggregate.php, rollup.php | `feat/analysis-jimin` |
+| 4 | 분석 A | 유지민 | aggregate.php, rollup.php | `feat/aggregation-jimin` |
 | 5 | 분석 B | 노경윤 | ranking.php, window.php | `feat/analysis-kyungyun` |
 | 6 | 공통·문서 | 왕은서 | config.php, header.php, login.php, logout.php, index.php | `feat/common-eunseo` |
 
