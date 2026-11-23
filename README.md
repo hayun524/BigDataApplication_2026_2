@@ -5,7 +5,7 @@
 서울 날씨(기온·강수량 등)가 따릉이 이용량에 주는 영향을 분석하는 웹사이트 (PHP + MariaDB, XAMPP)
 
 ## 폴더 구조
-이 레포 = 제출용 `htdocs/teamXX` 폴더 그대로
+이 레포 = 제출용 `htdocs/team06` 폴더 그대로
 
 ```
 /                PHP 페이지 (config.php, header.php, index.php, station_list.php ...)
@@ -21,9 +21,17 @@ assets/          CSS, JS, Chart.js 등 (CDN 대신 파일로 포함)
 | 1 | DB 설계 | 김수연 | sql/dbcreate.sql, sql/dbdrop.sql, sql/dbdump.sql, docs/ERD, station_list.php | `feat/db-suyeon` |
 | 2 | 데이터 | 정서진 | sql/dbinsert.sql, data/ 변환 스크립트, weather_manage.php | `feat/data-seojin` |
 | 3 | CRUD 웹 | 정하윤 | station_form.php, report.php | `feat/crud-hayun` |
-| 4 | 분석 A | 유지민 | aggregate.php, rollup.php | `feat/analysis-jimin` |
-| 5 | 분석 B | 노경윤 | ranking.php, window.php | `feat/analysis-kyungyun` |
+| 4 | 분석 A | 유지민 | aggregate.php, rollup.php | `feat/aggregation-jimin` |
+| 5 | 분석 B | 왕은서 (11/23 인수, 기존 담당 노경윤) | ranking.php, window.php | `feat/analysis-eunseo` |
 | 6 | 공통·문서 | 왕은서 | config.php, header.php, login.php, logout.php, index.php | `feat/common-eunseo` |
+
+### 발표·통합 분담 (11/23 조정)
+| 역할 | 담당 |
+|---|---|
+| 발표 (스크립트 작성·진행) | 김수연 |
+| 발표 자료(PPT) · 데모 시연 | 정서진 |
+| 분석 B 코드 검토 | 유지민 |
+| 코드 통합 확인 · 논문 통합 | 정하윤 |
 
 ## 시작하기
 
@@ -39,12 +47,12 @@ cd /Applications/XAMPP/xamppfiles/htdocs
 # 윈도우
 cd C:\xampp\htdocs
 
-git clone https://github.com/hayun524/BigDataApplication_2026_2.git teamXX
-cd teamXX
+git clone https://github.com/hayun524/BigDataApplication_2026_2.git team06
+cd team06
 git checkout -b feat/역할-이름          # 위 담당표의 내 브랜치 이름
 git push -u origin feat/역할-이름
 ```
-→ XAMPP 켜고 브라우저에서 `localhost/teamXX`로 접속
+→ XAMPP 켜고 브라우저에서 `localhost/team06`로 접속
 
 ### 2. 매일 작업할 때
 ```bash
@@ -85,7 +93,7 @@ git push
 | 11/12 | 스키마 확정 (dbcreate.sql, dbdrop.sql) |
 | 11/17 | 중간 점검: 각자 페이지 기본 동작 시연 |
 | 11/25 | 개발 마감 |
-| 11/30 | 최종 제출: 코드, SQL 4종, 보고서, 영어 논문 |
-| 12/1 | 영어 PPT + 데모 영상 |
-| 12/3 · 12/7 | 영어 발표·데모 |
-| 12/10 | 영어 논문 수정본 |
+| 11/30 | 최종 제출: 코드, SQL 4종, 보고서, 논문 |
+| 12/1 | PPT + 데모 영상 |
+| 12/3 · 12/7 | 발표·데모 |
+| 12/10 | 논문 수정본 |
