@@ -140,7 +140,7 @@ $stations = $conn->query(
 $STATUS = ['정상', '점검중'];   // TODO: dbcreate.sql의 status 값과 맞추기
 ?>
 <main class="container">
-  <h2>대여소 관리 <span class="owner-tag">등록 · 수정 · 삭제 · 정하윤</span></h2>
+  <h2>대여소 관리</h2>
 
   <?php if ($flash): ?>
     <p class="flash <?= sf_h($flash['type']) ?>"><?= sf_h($flash['msg']) ?></p>
