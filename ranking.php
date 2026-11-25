@@ -34,7 +34,10 @@ function rk_h($s) {
 }
 
 function rk_valid_date($value, $min, $max) {
-    $d = DateTime::createFromFormat('Y-m-d', (string)$value);
+    if (!is_string($value) || !preg_match('/\A[0-9]{4}-[0-9]{2}-[0-9]{2}\z/', $value)) {
+        return false;
+    }
+    $d = DateTime::createFromFormat('!Y-m-d', $value);
     return $d && $d->format('Y-m-d') === $value && $value >= $min && $value <= $max;
 }
 
@@ -79,11 +82,11 @@ $district_ids = array_map('intval', array_column($districts, 'district_id'));
 // 작성자: 왕은서 — 사용자 입력 읽기 + 검사 (기본값: 비 오는 날 유지율, 자치구별 상위 3)
 // ---------------------------------------------------------------------
 $searched   = isset($_GET['search']);
-$weather    = isset($WEATHERS[$_GET['weather'] ?? '']) ? $_GET['weather'] : '비';
-$metric_key = isset($METRICS[$_GET['metric'] ?? '']) ? $_GET['metric'] : 'retention';
-$func_key   = isset($RANK_FUNCS[$_GET['func'] ?? '']) ? $_GET['func'] : 'rank';
-$scope      = isset($SCOPES[$_GET['scope'] ?? '']) ? $_GET['scope'] : 'district';
-$district   = (int)($_GET['district'] ?? 0);
+$weather    = is_string($_GET['weather'] ?? null) && isset($WEATHERS[$_GET['weather']]) ? $_GET['weather'] : '비';
+$metric_key = is_string($_GET['metric'] ?? null) && isset($METRICS[$_GET['metric']]) ? $_GET['metric'] : 'retention';
+$func_key   = is_string($_GET['func'] ?? null) && isset($RANK_FUNCS[$_GET['func']]) ? $_GET['func'] : 'rank';
+$scope      = is_string($_GET['scope'] ?? null) && isset($SCOPES[$_GET['scope']]) ? $_GET['scope'] : 'district';
+$district   = filter_var($_GET['district'] ?? 0, FILTER_VALIDATE_INT);
 if (!in_array($district, $district_ids, true)) {
     $district = 0;                                   // 0 = 전체 자치구
 }
@@ -91,7 +94,7 @@ $top_n = filter_var($_GET['top_n'] ?? 3, FILTER_VALIDATE_INT, ['options' => ['mi
 if ($top_n === false) {
     $top_n = 3;
 }
-$hangang_only = !empty($_GET['hangang']);
+$hangang_only = ($_GET['hangang'] ?? null) === '1';
 $date_from = rk_valid_date($_GET['date_from'] ?? '', $data_min, $data_max) ? $_GET['date_from'] : $data_min;
 $date_to   = rk_valid_date($_GET['date_to'] ?? '', $data_min, $data_max) ? $_GET['date_to'] : $data_max;
 
@@ -130,7 +133,9 @@ $rank_col   = $scope === 'district' ? 'district_rank' : 'overall_rank';
 $where  = 'r.rent_date BETWEEN ? AND ?';
 $types  = 'ss';
 $params = [$date_from, $date_to];
+$weather_join = '';
 if ($weather !== 'all') {
+    $weather_join = 'JOIN weather w ON w.weather_date = r.rent_date';
     $where   .= ' AND w.weather_type = ?';
     $types   .= 's';
     $params[] = $weather;
@@ -149,7 +154,7 @@ WITH picked AS (
            SUM(r.total_minutes) / NULLIF(SUM(r.rent_count), 0)          AS avg_min,
            SUM(r.total_distance_m) / NULLIF(SUM(r.rent_count), 0) / 1000 AS avg_km
       FROM rental_daily r
-      JOIN weather w ON w.weather_date = r.rent_date
+      {$weather_join}
      WHERE {$where}
      GROUP BY r.station_id
 ),

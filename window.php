@@ -34,7 +34,10 @@ function wd_h($s) {
 }
 
 function wd_valid_date($value, $min, $max) {
-    $d = DateTime::createFromFormat('Y-m-d', (string)$value);
+    if (!is_string($value) || !preg_match('/\A[0-9]{4}-[0-9]{2}-[0-9]{2}\z/', $value)) {
+        return false;
+    }
+    $d = DateTime::createFromFormat('!Y-m-d', $value);
     return $d && $d->format('Y-m-d') === $value && $value >= $min && $value <= $max;
 }
 
@@ -96,11 +99,11 @@ $station_ids  = array_map('intval', array_column($stations, 'station_id'));
 // 작성자: 왕은서 — 사용자 입력 읽기 + 검사 (기본값: 전체, 4~6월, 7일 이동평균)
 // ---------------------------------------------------------------------
 $searched   = isset($_GET['search']);
-$target     = isset($TARGETS[$_GET['target'] ?? '']) ? $_GET['target'] : 'all';
-$district   = (int)($_GET['district'] ?? 0);
-$station    = (int)($_GET['station'] ?? 0);
-$metric_key = isset($METRICS[$_GET['metric'] ?? '']) ? $_GET['metric'] : 'rent';
-$win        = (int)($_GET['win'] ?? 7);
+$target     = is_string($_GET['target'] ?? null) && isset($TARGETS[$_GET['target']]) ? $_GET['target'] : 'all';
+$district   = filter_var($_GET['district'] ?? 0, FILTER_VALIDATE_INT);
+$station    = filter_var($_GET['station'] ?? 0, FILTER_VALIDATE_INT);
+$metric_key = is_string($_GET['metric'] ?? null) && isset($METRICS[$_GET['metric']]) ? $_GET['metric'] : 'rent';
+$win        = filter_var($_GET['win'] ?? 7, FILTER_VALIDATE_INT);
 if (!in_array($win, $WINDOWS, true)) {
     $win = 7;
 }
@@ -108,7 +111,9 @@ $default_from = max($data_min, $data_year . '-04-01');
 $default_to   = min($data_max, $data_year . '-06-30');
 $date_from = wd_valid_date($_GET['date_from'] ?? '', $data_min, $data_max) ? $_GET['date_from'] : $default_from;
 $date_to   = wd_valid_date($_GET['date_to'] ?? '', $data_min, $data_max) ? $_GET['date_to'] : $default_to;
-$show = $searched ? array_values(array_intersect(array_keys($COLUMNS), (array)($_GET['show'] ?? []))) : array_keys($COLUMNS);
+$requested_columns = $_GET['show'] ?? [];
+$requested_columns = is_array($requested_columns) ? array_filter($requested_columns, 'is_string') : [];
+$show = $searched ? array_values(array_intersect(array_keys($COLUMNS), $requested_columns)) : array_keys($COLUMNS);
 
 $notice = '';
 if ($date_from > $date_to) {
@@ -149,23 +154,28 @@ $metric_sql = $METRICS[$metric_key]['sql'];
 $frame = 'ROWS BETWEEN ' . ($win - 1) . ' PRECEDING AND CURRENT ROW';   // $win 은 허용 목록의 정수
 
 $sql = "
-WITH daily AS (
-    SELECT r.rent_date, {$metric_sql} AS val,
-           w.avg_temp, w.precipitation, w.weather_type, c.day_name, c.day_type
+WITH rental_totals AS (
+    SELECT r.rent_date, {$metric_sql} AS val
       FROM rental_daily r
       JOIN station  s ON s.station_id   = r.station_id
-      JOIN weather  w ON w.weather_date = r.rent_date
-      JOIN calendar c ON c.cal_date     = r.rent_date
      WHERE r.rent_date BETWEEN ? AND ?{$target_filter}
-     GROUP BY r.rent_date, w.avg_temp, w.precipitation, w.weather_type, c.day_name, c.day_type
+     GROUP BY r.rent_date
+),
+daily AS (
+    SELECT c.cal_date AS rent_date, r.val,
+           w.avg_temp, w.precipitation, w.weather_type, c.day_name, c.day_type
+      FROM calendar c
+      LEFT JOIN rental_totals r ON r.rent_date = c.cal_date
+      LEFT JOIN weather w ON w.weather_date = c.cal_date
+     WHERE c.cal_date BETWEEN ? AND ?
 ),
 windowed AS (
     SELECT rent_date, val, avg_temp, precipitation, weather_type, day_name, day_type,
            AVG(val)      OVER (ORDER BY rent_date {$frame}) AS ma,
-           COUNT(*)      OVER (ORDER BY rent_date {$frame}) AS ma_days,
+           COUNT(val)    OVER (ORDER BY rent_date {$frame}) AS ma_days,
            AVG(avg_temp) OVER (ORDER BY rent_date {$frame}) AS temp_ma,
            LAG(val)      OVER (ORDER BY rent_date)          AS prev_val,
-           SUM(CASE WHEN rent_date >= ? THEN val ELSE 0 END)
+           SUM(CASE WHEN rent_date >= ? THEN val END)
                          OVER (ORDER BY rent_date ROWS UNBOUNDED PRECEDING) AS cum
       FROM daily
 )
@@ -178,8 +188,8 @@ $rows = [];
 $error = '';
 try {
     $stmt = $conn->prepare($sql);
-    $types  = 'ss' . $t_types . 'sss';
-    $params = array_merge([$read_from, $date_to], $t_params, [$date_from, $date_from, $date_to]);
+    $types  = 'ss' . $t_types . 'sssss';
+    $params = array_merge([$read_from, $date_to], $t_params, [$read_from, $date_to, $date_from, $date_from, $date_to]);
     $stmt->bind_param($types, ...$params);
     $stmt->execute();
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -194,21 +204,26 @@ try {
 $metric = $METRICS[$metric_key];
 $fmt = function ($n, $dec = 0) { return $n === null ? '-' : number_format((float)$n, $dec); };
 $summary = null;
-if ($rows) {
-    $vals  = array_map(function ($r) { return (float)$r['val']; }, $rows);
-    $temps = array_map(function ($r) { return (float)$r['avg_temp']; }, $rows);
-    $peak = $low = $rows[0];
+$observations = array_filter($rows, function ($r) { return $r['val'] !== null; });
+if ($observations) {
+    $vals = array_column($observations, 'val');
+    $pairs = array_filter($observations, function ($r) { return $r['avg_temp'] !== null; });
+    $peak = $low = reset($observations);
     foreach ($rows as $r) {
+        if ($r['ma'] === null) {
+            continue;
+        }
         if ((float)$r['ma'] > (float)$peak['ma']) { $peak = $r; }
         if ((float)$r['ma'] < (float)$low['ma'])  { $low = $r; }
     }
     $summary = [
         'days'  => count($rows),
+        'observed_days' => count($observations),
         'total' => array_sum($vals),
         'avg'   => array_sum($vals) / count($vals),
         'peak'  => $peak,
         'low'   => $low,
-        'corr'  => wd_corr($temps, $vals),
+        'corr'  => wd_corr(array_column($pairs, 'avg_temp'), array_column($pairs, 'val')),
     ];
 }
 
@@ -233,7 +248,8 @@ function wd_chart(array $rows, $win, $unit) {
     $pw = $W - $L - $R; $ph = $H - $T - $B;
     $vals = array_map(function ($r) { return (float)$r['val']; }, $rows);
     $vmax = max($vals) ?: 1;
-    $temps = array_map(function ($r) { return (float)$r['temp_ma']; }, $rows);
+    $temps = array_filter(array_column($rows, 'temp_ma'), function ($value) { return $value !== null; });
+    $temps = $temps ?: [0];
     $tmin = floor(min($temps) / 5) * 5; $tmax = ceil(max($temps) / 5) * 5;
     if ($tmax <= $tmin) { $tmax = $tmin + 5; }
     $x = function ($i) use ($L, $pw, $n) { return $L + $pw * $i / ($n - 1); };
@@ -241,8 +257,14 @@ function wd_chart(array $rows, $win, $unit) {
     $yt = function ($t) use ($T, $ph, $tmin, $tmax) { return $T + $ph * (1 - ($t - $tmin) / ($tmax - $tmin)); };
     $path = function ($key, $fy) use ($rows, $x) {
         $d = '';
+        $drawing = false;
         foreach ($rows as $i => $r) {
-            $d .= ($i ? 'L' : 'M') . round($x($i), 1) . ' ' . round($fy((float)$r[$key]), 1);
+            if ($r[$key] === null) {
+                $drawing = false;
+                continue;
+            }
+            $d .= ($drawing ? 'L' : 'M') . round($x($i), 1) . ' ' . round($fy((float)$r[$key]), 1);
+            $drawing = true;
         }
         return $d;
     };
@@ -383,7 +405,7 @@ function wd_season_url($from, $to) {
   <?php if ($summary): $p = $summary['peak']; $lo = $summary['low']; $c = $summary['corr']; ?>
   <!-- 작성자: 왕은서 — 요약 숫자 -->
   <section class="kpis">
-    <div class="kpi"><span><?= wd_h($target_name) ?> · 기간 합계</span><strong><?= $fmt($summary['total'], $metric['dec']) ?></strong><small><?= $metric['unit'] ?> · <?= $summary['days'] ?>일</small></div>
+    <div class="kpi"><span><?= wd_h($target_name) ?> · 기간 합계</span><strong><?= $fmt($summary['total'], $metric['dec']) ?></strong><small><?= $metric['unit'] ?> · 기록 <?= $summary['observed_days'] ?>/<?= $summary['days'] ?>일</small></div>
     <div class="kpi"><span>하루 평균</span><strong><?= $fmt($summary['avg'], $metric['dec'] ?: 1) ?></strong><small><?= $metric['unit'] ?></small></div>
     <div class="kpi"><span><?= $win ?>일 이동평균 최고</span><strong><?= $fmt($p['ma'], 1) ?></strong><small><?= wd_h(substr($p['rent_date'], 5)) ?> · 최저 <?= $fmt($lo['ma'], 1) ?> (<?= wd_h(substr($lo['rent_date'], 5)) ?>)</small></div>
     <div class="kpi"><span>기온과 상관계수</span><strong><?= $c === null ? '-' : $fmt($c, 2) ?></strong>
@@ -413,11 +435,11 @@ function wd_season_url($from, $to) {
         </thead>
         <tbody>
           <?php foreach ($rows as $r):
-              $diff = $r['prev_val'] === null ? null : (float)$r['val'] - (float)$r['prev_val'];
-              $rate = ($r['prev_val'] === null || (float)$r['prev_val'] == 0) ? null : $diff / (float)$r['prev_val'] * 100; ?>
+              $diff = ($r['val'] === null || $r['prev_val'] === null) ? null : (float)$r['val'] - (float)$r['prev_val'];
+              $rate = ($diff === null || (float)$r['prev_val'] == 0) ? null : $diff / (float)$r['prev_val'] * 100; ?>
             <tr class="<?= $r['day_type'] === '휴일' ? 'wd-wkend' : '' ?>">
               <td><?= wd_h($r['rent_date']) ?> (<?= wd_h($r['day_name']) ?>)</td>
-              <td><?= wd_h($r['weather_type']) ?><?= (float)$r['precipitation'] > 0 ? ' <span class="wd-sub">' . $fmt($r['precipitation'], 1) . 'mm</span>' : '' ?></td>
+              <td><?= wd_h($r['weather_type'] ?? '-') ?><?= (float)$r['precipitation'] > 0 ? ' <span class="wd-sub">' . $fmt($r['precipitation'], 1) . 'mm</span>' : '' ?></td>
               <td class="num"><?= $fmt($r['val'], $metric['dec']) ?></td>
               <td class="num"><?= $fmt($r['ma'], 1) ?><?= (int)$r['ma_days'] < $win ? ' <span class="wd-partial">(' . (int)$r['ma_days'] . '일치)</span>' : '' ?></td>
               <?php if (in_array('diff', $show, true)): ?>
@@ -428,8 +450,8 @@ function wd_season_url($from, $to) {
               <?php endif; ?>
               <?php if (in_array('cum', $show, true)): ?><td class="num"><?= $fmt($r['cum'], $metric['dec']) ?></td><?php endif; ?>
               <?php if (in_array('temp', $show, true)): ?>
-                <td class="num"><?= $fmt($r['avg_temp'], 1) ?>℃</td>
-                <td class="num"><?= $fmt($r['temp_ma'], 1) ?>℃</td>
+                <td class="num"><?= $r['avg_temp'] === null ? '-' : $fmt($r['avg_temp'], 1) . '℃' ?></td>
+                <td class="num"><?= $r['temp_ma'] === null ? '-' : $fmt($r['temp_ma'], 1) . '℃' ?></td>
               <?php endif; ?>
             </tr>
           <?php endforeach; ?>
