@@ -1,6 +1,6 @@
 # 작성자: 정서진 (2. 데이터)
 # 정제한 데이터로 sql/dbinsert.sql 을 만든다.
-#   순서: district → calendar → station → weather → rental_daily → user_account
+#   순서: district → calendar → station → weather → rental_daily → user_account → fault_report
 #
 # 입력
 #   - sql/district_seed.sql, sql/calendar_2024.sql   (김수연 작성, 그대로 합침)
@@ -8,6 +8,7 @@
 #   - data/raw/rental_daily_45.csv                   (filter_daily.py 결과)
 #   - data/raw/OBS_ASOS_DD_*.csv                     (기상자료개방포털 ASOS 서울 108 일자료, 2024 전체 항목)
 #   - data/user_account_insert.sql                   (왕은서 작성, 그대로 합침)
+#   - data/fault_report_sample.sql                   (정하윤 작성, 그대로 합침: 고장신고 60건 + 점검중 대여소 5곳)
 #
 # 정제 규칙
 #   - rental_daily : 45개 × 366일 전부 넣고, 원본에 없는 날(이용 0건)은 0으로 채움
@@ -115,12 +116,13 @@ if __name__ == '__main__':
         strip_set_names(read_text(os.path.join(ROOT, 'sql', 'calendar_2024.sql'))),
         st, weather_sql(), rental,
         read_text(os.path.join(HERE, 'user_account_insert.sql')),
+        read_text(os.path.join(HERE, 'fault_report_sample.sql')),
     ]
     head = ("-- =====================================================================\n"
             "-- dbinsert.sql : 샘플 데이터 초기화 스크립트 (스키마 v2 기준)\n"
             "-- 작성자: 정서진 (2. 데이터)  /  district·calendar 부분 작성자: 김수연\n"
             "-- 실행 순서: dbcreate.sql → dbinsert.sql\n"
-            "-- 넣는 순서: district → calendar → station → weather → rental_daily → user_account\n"
+            "-- 넣는 순서: district → calendar → station → weather → rental_daily → user_account → fault_report\n"
             "-- 생성: python data/make_dbinsert.py\n"
             "-- =====================================================================\n"
             "SET NAMES utf8mb4;\nUSE team06;\n")
